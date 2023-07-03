@@ -1,0 +1,41 @@
+[package]
+name = "lang-tools"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anstyle = "1.0.1"
+anyhow = { version = "1.0.71", features = ["backtrace"] }
+arboard = "3.2.0"
+clap = { version = "4.3.10", features = ["derive", "env", "cargo", "color", "unstable-styles", "wrap_help"] }
+clap-serde-derive = "0.2.0"
+console = "0.15.7"
+dialoguer = "0.10.4"
+dirs = "5.0.1"
+epub = "2.1.1"
+fancy-regex = "0.11.0"
+html2text = "0.6.0"
+itertools = "0.11.0"
+lazy_static = "1.4.0"
+log = "0.4.19"
+rational = "1.2.2"
+reqwest = { version = "0.11.18", features = ["blocking"] }
+serde = { version = "1.0.164", features = ["derive"] }
+serde_json = "1.0.99"
+serde_yaml = "0.9.22"
+shellexpand = "3.1.0"
+srtlib = "0.1.7"
+tabled = "0.12.2"
+thiserror = "1.0.40"
+url = { version = "2.4.0", features = ["serde"] }
+yaml-rust = "0.4.5"
+youtube_dl = "0.8.1"
+
+[lib]
+name = "lang_tools"
+path = "src/lib.rs"
+
+[[bin]]
+name = "lang-tools"
