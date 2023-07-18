@@ -23,6 +23,13 @@ lazy_static! {
     // 00:16:43,770 --> 00:16:45,360
     // Und die haben vielleicht mal für Y-
     static ref END_SUBTITLE_TEXT_WITH_HYPHEN: Regex = Regex::new(r"([A-Za-z])-$").unwrap();
+
+    // A subtitle line where a line ends with a hyphenated word. 
+    // 44
+    // 00:02:19,320 --> 00:02:23,440
+    // dass 70% der Insel und des um-
+    // liegenden Archipels zerstört wurden.
+    static ref MID_SUBTITLE_HYPHENATED_WORD: Regex = Regex::new(r"([A-Za-z])-\n(\w*)\s").unwrap();
 }
 
 pub fn clean_subtitles(subtitles: &mut Subtitles) {
@@ -31,7 +38,7 @@ pub fn clean_subtitles(subtitles: &mut Subtitles) {
     }
 
     for (subtitle, subtitle_next) in subtitles.into_iter().tuples() {
-        adjust_ending_hyphen(subtitle, subtitle_next)
+        adjust_hyphen_ending_subtitle(subtitle, subtitle_next)
     }
 }
 
@@ -40,6 +47,7 @@ fn clean(text: &str) -> String {
     let text = MULTI_SPACE_RE.replace_all(&text, " ");
     let text = CARRIAGE_RETURN_RE.replace_all(&text, " ");
     let text = SPACES_AROUND_NEW_LINES.replace_all(&text, "\n");
+    let text = MID_SUBTITLE_HYPHENATED_WORD.replace_all(&text, "$1$2\n");
     return text.trim().to_owned();
 }
 
@@ -58,7 +66,7 @@ fn clean(text: &str) -> String {
 /// in the process when trying to align subtitles with translations. If we see
 /// this pattern of a subtitle text ending with r"([A-Za-z])-\n" then lets pull
 /// the first word of the next line up.
-fn adjust_ending_hyphen(subtitle: &mut Subtitle, subtitle_next: &mut Subtitle) {
+fn adjust_hyphen_ending_subtitle(subtitle: &mut Subtitle, subtitle_next: &mut Subtitle) {
     if END_SUBTITLE_TEXT_WITH_HYPHEN
         .is_match(&subtitle.text)
         .unwrap()

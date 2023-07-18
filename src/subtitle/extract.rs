@@ -10,9 +10,6 @@ lazy_static! {
     // Regex that matches an initial.
     static ref INITIAL_RE: Regex = Regex::new(r"(\s[A-Z0-9][.])\n").unwrap();
 
-    // A line that ends with a hyphenated word
-    static ref END_HYPHENATED_WORD: Regex = Regex::new(r"([A-Za-z])-\n").unwrap();
-
     // A line that ends with a hyphen but has a space before it.
     static ref END_HYPHEN: Regex = Regex::new(r"\s-\n").unwrap();
 }
@@ -29,7 +26,6 @@ pub fn extract_text(subtitles: &Subtitles) -> String {
 fn join_sentences(text: String) -> String {
     let text = JOIN_RE.replace_all(&text, "$1 ");
     let text = INITIAL_RE.replace_all(&text, "$1 ");
-    let text = END_HYPHENATED_WORD.replace_all(&text, "$1");
     let text = END_HYPHEN.replace_all(&text, " - ");
     return text.to_string();
 }
@@ -55,20 +51,6 @@ mod test {
         let text = extract_text(&subtitles);
 
         assert_eq!(text, "Heute sieht sie diese Aufnahmen zum 1. Mal.")
-    }
-
-    #[test]
-    fn join_hyphenated_word_at_end_of_line() {
-        let subtitles = subtitles(vec![
-            "Begünstigt er, dass Wissenschaft-\nler nicht gehört werden?",
-        ]);
-
-        let text = extract_text(&subtitles);
-
-        assert_eq!(
-            text,
-            "Begünstigt er, dass Wissenschaftler nicht gehört werden?"
-        )
     }
 
     #[test]

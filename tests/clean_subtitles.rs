@@ -71,7 +71,7 @@ fn remove_space_carriage_return_space() {
 }
 
 #[test]
-fn adjust_ending_hyphen() {
+fn adjust_subtitle_ending_hyphen() {
     let mut subtitles = subtitles(vec![
         "Und die haben vielleicht mal für Y-",
         "Kollektiv irgendwas gedreht.",
@@ -81,4 +81,15 @@ fn adjust_ending_hyphen() {
 
     assert_eq!(subtitles[0].text, "Und die haben vielleicht mal für Y-Kollektiv");
     assert_eq!(subtitles[1].text, "irgendwas gedreht.");
+}
+
+#[test]
+fn adjust_hyphen_newline() {
+    let mut subtitles = subtitles(vec![
+        "dass 70% der Insel und des um-\nliegenden Archipels zerstört wurden."
+    ]);
+
+    clean_subtitles(&mut subtitles);
+
+    assert_eq!(subtitles[0].text, "dass 70% der Insel und des umliegenden\nArchipels zerstört wurden.");
 }
