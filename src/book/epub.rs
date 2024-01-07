@@ -1,35 +1,46 @@
 use anyhow::anyhow;
-use std::{path::PathBuf, io::{Read, Seek}};
-
+use fancy_regex::Regex;
+use std::io::{Read, Seek};
 use epub::doc::EpubDoc;
+use lazy_static::lazy_static;
+use crate::book::clean_text;
 
-use super::Chapter;
+use super::BookSection;
 
-impl Chapter {
+lazy_static! {
+    // Regex that matches a line that has a # at the beginning.
+    static ref HASH_LINE_RE: Regex = Regex::new(r"^\s*#\s*").unwrap();
+}
+
+impl BookSection {
     pub fn from_epub<R: Read + Seek>(
         mut epub: EpubDoc<R>,
-        book_title: &str,
-        base_path: &PathBuf,
-    ) -> Vec<Chapter> {
-        let chapters: Vec<(String, PathBuf)> = epub
-            .toc
-            .iter()
-            .map(|c| (c.label.to_owned(), c.content.to_owned()))
-            .collect();
+    ) -> Vec<BookSection> {
+        let mut sections: Vec<BookSection> = vec![] ;
+        loop {
+            if let Some((content, _)) = epub.get_current() {
+                let content = html2text::from_read(content.as_slice(), std::usize::MAX);
+                let content = clean_text(&content);
 
-        chapters
-            .iter()
-            .filter_map(|x| {
-                // Filters out chapters where resource string is None 
-                epub.get_resource_str_by_path(&x.1).map(|content| {
-                    Chapter::new(
-                        book_title.to_owned(),
-                        x.0.to_owned(),
-                        html2text::from_read(content.as_bytes(), std::usize::MAX),
-                        base_path.to_owned())
-                })
-            })
-            .collect()
+                if content.len() > 0 {
+                    let section_title = content.lines().next().unwrap();
+                    let section_title = clean_section_title(&section_title);
+
+                    let section = BookSection::new(
+                        section_title.to_owned(),
+                        epub.get_current_page(),
+                        content.trim().to_owned());
+
+                    sections.push(section);
+                }
+            }
+
+            if !epub.go_next() {
+                break;
+            }
+        }
+
+        sections
     }
 }
 
@@ -39,4 +50,8 @@ pub fn get_book_title(
     return epub
         .mdata("title")
         .ok_or_else(|| anyhow!("Unable to derive book title from epub."));
+}
+
+fn clean_section_title(s: &str) -> String {
+    HASH_LINE_RE.replace_all(s, "").to_string()
 }

@@ -3,7 +3,7 @@ use crate::{
     cli::{EpubTranslateArgs, Config}, common::{print_info, print_bracketed_info}
 };
 use epub::doc::EpubDoc;
-use lang_tools::{book::{book_path, epub::get_book_title, toc_path, Chapter}, path::first_path_or_current_dir};
+use lang_tools::{book::{book_path, epub::get_book_title, BookSection}, path::first_path_or_current_dir};
 
 pub fn exec(args: EpubTranslateArgs, config: Config) -> Result<(), anyhow::Error> {
     let epub = EpubDoc::new(args.input_file)?;
@@ -19,11 +19,9 @@ pub fn exec(args: EpubTranslateArgs, config: Config) -> Result<(), anyhow::Error
 
     print_bracketed_info("Writing translations to", &book_path.to_string_lossy());
 
-    let toc_path = toc_path(&book_path, &book_title);
+    let mut sections: Vec<BookSection> = BookSection::from_epub(epub);
 
-    let chapters = Chapter::from_epub(epub, &book_title, &book_path);
-
-    prompt_book_translation(&toc_path, &book_title, &chapters)?;
+    prompt_book_translation(&book_path, &mut sections)?;
 
     print_info("- Book translation session complete!");
 

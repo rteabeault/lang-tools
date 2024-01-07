@@ -62,7 +62,7 @@ pub enum Commands {
 
     /// Aids in the translation of epub.
     /// 
-    /// Creates a markdown file for each chapter with a source/target table.
+    /// Creates a markdown file for each section with a source/target table.
     /// Creates a TOC file.
     ///
     /// lang-tools book translate "~/Dropbox/German/Books/Der Astronaut.epub" --output-path "~/Dropbox/German/Books"
@@ -73,7 +73,7 @@ pub enum Commands {
     ///
     /// base_path: ~/Dropbox/German/Books/
     /// book_path: ~/Dropbox/German/Books/Der Astronaut/
-    /// chapter_path: ~/Dropbox/German/Books/Der Astronaut/Der Astronaut-1.md
+    /// section_path: ~/Dropbox/German/Books/Der Astronaut/Der Astronaut-1.md
     #[command(verbatim_doc_comment)]
     EpubTranslate(EpubTranslateArgs),
 }

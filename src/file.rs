@@ -12,6 +12,8 @@ pub fn read_from_file(file: PathBuf) -> Result<String, anyhow::Error> {
 pub fn write_to_file(file: &PathBuf, text: &str) -> Result<(), anyhow::Error> {
     let file = expand_path(&file)?;
 
+    println!("Writing: {:?}", file);
+
     if let Some(parent) = file.parent() {
         std::fs::create_dir_all(parent)
             .context(format!("Failed to create missing paths while writing file [{:?}]", file))?;

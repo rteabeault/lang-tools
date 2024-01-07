@@ -30,6 +30,14 @@ lazy_static! {
     // dass 70% der Insel und des um-
     // liegenden Archipels zerstört wurden.
     static ref MID_SUBTITLE_HYPHENATED_WORD: Regex = Regex::new(r"([A-Za-z])-\n(\w*)\s").unwrap();
+
+    // A subtitle line that ends with one or more \h.
+    // 6
+    // 00:00:25,320 --> 00:00:31,080
+    // Vielleicht sind wir früh dran und entstanden\h
+    // quasi vor allem anderen Leben - das könnte\h\h
+    static ref SLASH_H: Regex = Regex::new(r"\\h").unwrap();
+
 }
 
 pub fn clean_subtitles(subtitles: &mut Subtitles) {
@@ -43,6 +51,7 @@ pub fn clean_subtitles(subtitles: &mut Subtitles) {
 }
 
 fn clean(text: &str) -> String {
+    let text = SLASH_H.replace_all(&text, "");
     let text = HTML_TAG_RE.replace_all(&text, "");
     let text = MULTI_SPACE_RE.replace_all(&text, " ");
     let text = CARRIAGE_RETURN_RE.replace_all(&text, " ");

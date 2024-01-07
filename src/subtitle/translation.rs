@@ -3,7 +3,7 @@ use itertools::Itertools;
 use lazy_static::lazy_static;
 use srtlib::{Subtitle, Subtitles};
 
-use crate::{translation::{Translation, VecExt}};
+use crate::translation::{Translation, VecExt};
 
 use super::ext::SubtitleExt;
 

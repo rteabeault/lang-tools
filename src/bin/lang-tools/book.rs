@@ -2,10 +2,10 @@ use std::{path::PathBuf, ffi::OsStr};
 
 use anyhow::Context;
 use console::style;
-use dialoguer::{Confirm, Select};
+use dialoguer::{Select, Editor};
 use lang_tools::{
-    book::{write_toc, Chapter},
-    clipboard::{get_clipboard, set_clipboard},
+    book::{BookSection, section_path},
+    clipboard::set_clipboard,
     file::write_to_file,
     translation::Translation,
 };
@@ -13,80 +13,79 @@ use tabled::{settings::Style, Table};
 
 use crate::common::{dialoguer_theme, print_info};
 
-fn find_first_missing_chapter(chapters: &[Chapter]) -> Option<usize> {
-    return chapters.iter().position(|c| !c.path.exists());
+fn find_first_missing_section(base_path: &PathBuf, sections: &[BookSection]) -> Option<usize> {
+    return sections.iter().position(|c| {
+        let path = section_path(base_path, c);
+        !path.exists()
+    });
 }
 
-fn style_book_chapter(chapter: &Chapter) -> Result<String, anyhow::Error> {
-    if chapter.path.exists() {
+fn style_book_section(base_path: &PathBuf, section: &BookSection) -> Result<String, anyhow::Error> {
+    let section_path = section_path(base_path, &section);
+    if section_path.exists() {
         Ok(style(format!(
-            "{} Chapter: {} [{} - {} bytes]",
+            "{} Section: {} [{} - {} bytes]",
             "✔",
-            chapter.chapter_title,
-            chapter.path.file_name().unwrap_or(OsStr::new("")).to_string_lossy().to_string(),
-            chapter.path.metadata()?.len()
+            section.title,
+            section_path.file_name().unwrap_or(OsStr::new("")).to_string_lossy().to_string(),
+            section_path.metadata()?.len()
         ))
         .cyan()
         .to_string())
     } else {
-        Ok(style(format!("{} Chapter: {}", "✘", chapter.chapter_title))
+        Ok(style(format!("{} Section: {}", "✘", section.title))
             .red()
             .to_string())
     }
 }
 
 pub fn prompt_book_translation(
-    toc_path: &PathBuf,
-    book_title: &str,
-    chapters: &[Chapter],
+    book_path: &PathBuf,
+    sections: &mut [BookSection],
 ) -> Result<(), anyhow::Error> {
 
     print_info("Starting book translation session!");
     
-    while let Some(selection) = prompt_for_chapters_list(&chapters)? {
-        prompt_translate_book_chapter(&chapters[selection])?;
-        write_toc(&toc_path, &book_title, &chapters)?;
+    while let Some(selection) = prompt_for_sections_list(&book_path, &sections)? {
+        prompt_translate_book_section(book_path, &mut sections[selection])?;
     }
 
     Ok(())
-}
+}   
 
-fn prompt_translate_book_chapter(chapter: &Chapter) -> Result<(), anyhow::Error> {
-    set_clipboard(&chapter.content)?;
+fn prompt_translate_book_section(base_path: &PathBuf, section: &mut BookSection) -> Result<(), anyhow::Error> {
+    set_clipboard(&section.content)?;
 
-    if Confirm::with_theme(&dialoguer_theme())
-        .with_prompt(format!(
-            "Chapter {} content has been placed in the paste buffer.\n  \
-                Tranlate the content and then copy these translations into the paste buffer.\n  \
-                Press 'y' to proceed or 'n' to cancel?",
-            chapter.chapter_title
-        ))
-        .interact()?
-    {
-        let translation = get_clipboard()?;
+    if let Some(translation) = Editor::new().edit("").unwrap() {
 
         let translations = 
-            Translation::from_source_and_target(&chapter.content, &translation)?;
+            Translation::from_source_and_target(&section.content, &translation)?;
 
         let table = 
             Table::new(translations).with(Style::markdown()).to_string();
 
-        write_to_file(&chapter.path, &table)?;
+        let content = format!("## {}\n{}", section.title, table);
+
+        let path = section_path(&base_path, section);
+
+        write_to_file(&path, &content)?;
+    } else {
+        println!("Translation was not saved.");
     }
 
     Ok(())
 }
 
-fn prompt_for_chapters_list(chapters: &[Chapter]) -> Result<Option<usize>, anyhow::Error> {
-    let items = chapters
+fn prompt_for_sections_list(base_path: &PathBuf, sections: &[BookSection]) -> Result<Option<usize>, anyhow::Error> {
+    let items = sections
         .iter()
-        .map(style_book_chapter)
+        .map(|section| style_book_section(&base_path, section))
         .collect::<Result<Vec<String>, anyhow::Error>>()?;
 
     return Select::with_theme(&dialoguer_theme())
-        .with_prompt("Pick a chapter to translate and press enter. Press 'esc' or 'q' to quit.")
+        .with_prompt("Pick a section to translate and press enter. The text will be placed in your paste buffer and an editor will be opened for you to place your translation. Press 'esc' or 'q' to quit.")
         .items(&items)
-        .default(find_first_missing_chapter(chapters).unwrap_or(0))
+        .default(find_first_missing_section(&base_path, sections).unwrap_or(0))
         .interact_opt()
-        .context("Failed to create chapter prompt.");
+        .context("Failed to create section prompt.");
 }
