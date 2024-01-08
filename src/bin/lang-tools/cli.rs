@@ -226,8 +226,17 @@ pub struct TextTranslateArgs {
 pub struct EpubTranslateArgs {
     pub input_file: PathBuf,
 
+    /// The base path where translations will be written.
     #[arg(long, short)]
-    pub output_path: Option<PathBuf>
+    pub output_path: Option<PathBuf>,
+
+    /// Output as a markdown table with source text in the left column and target in the right
+    #[arg(long, short = 't', default_value_t = true)]
+    pub output_markdown_table: bool,
+    
+    /// Output as alternating paragraphs of source lang followed by its translation
+    #[arg(long, short = 'a')]
+    pub output_alternating_langs: bool,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]

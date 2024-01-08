@@ -3,13 +3,14 @@ use std::{path::PathBuf, ffi::OsStr};
 use anyhow::Context;
 use console::style;
 use dialoguer::{Select, Editor};
+use itertools::Itertools;
 use lang_tools::{
-    book::{BookSection, section_path},
+    book::{BookSection, section_path, alternating_text_section_path},
     clipboard::set_clipboard,
     file::write_to_file,
     translation::Translation,
 };
-use tabled::{settings::Style, Table};
+// use tabled::{settings::Style, Table};
 
 use crate::common::{dialoguer_theme, print_info};
 
@@ -61,20 +62,50 @@ fn prompt_translate_book_section(base_path: &PathBuf, section: &mut BookSection)
         let translations = 
             Translation::from_source_and_target(&section.content, &translation)?;
 
-        let table = 
-            Table::new(translations).with(Style::markdown()).to_string();
 
-        let content = format!("## {}\n{}", section.title, table);
+        let alternating_langs = translations.iter().map(|t| {
+            let mut text: String = "".to_string();
+            text.push_str(format!("{}\n\n", &t.source_text.trim()).as_str());
+            text.push_str(format!("**{}**", t.target_text.trim()).as_str());
+            text
+        }).join("\n\n---\n\n");
 
-        let path = section_path(&base_path, section);
+        let content = format!("# {}\n{}", section.title, alternating_langs);
+
+        let path = alternating_text_section_path(&base_path, section);
 
         write_to_file(&path, &content)?;
+
+        // let table = 
+        //     Table::new(translations).with(Style::markdown()).to_string();
+
+        // let content = format!("# {}\n {}", section.title, table);
+
+        // let path = section_path(&base_path, section);
+
+        // write_to_file(&path, &content)?;
     } else {
         println!("Translation was not saved.");
     }
 
     Ok(())
 }
+
+// fn write_markfown_table(translations: Vec<Translation>) -> Result<(), anyhow::Error> {
+//     let table = 
+//     Table::new(translations).with(Style::markdown()).to_string();
+
+//     let content = format!("# {}\n {}", section.title, table);
+
+//     let path = section_path(&base_path, section);
+
+//     write_to_file(&path, &content)?;
+// }
+
+// fn write_markfown_alternating_paragraphs(translations: Vec<Translation>) -> Result<(), anyhow::Error> {
+    
+// }
+
 
 fn prompt_for_sections_list(base_path: &PathBuf, sections: &[BookSection]) -> Result<Option<usize>, anyhow::Error> {
     let items = sections

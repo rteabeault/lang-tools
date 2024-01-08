@@ -37,6 +37,11 @@ pub fn section_path(book_path: &PathBuf, section: &BookSection) -> PathBuf {
     book_path.join(format!("{:0>3}-{}.md", section.index, section.title))
 }
 
+pub fn alternating_text_section_path(book_path: &PathBuf, section: &BookSection) -> PathBuf {
+    book_path.join(format!("{:0>3}-{}-alt.md", section.index, section.title))
+}
+
+
 pub fn clean_text(s: &str) -> String {
     let cleaned = EMPTY_LINE_RE.replace_all(&s, "");
     cleaned.to_string()
